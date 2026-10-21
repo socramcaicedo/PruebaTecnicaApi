@@ -5,6 +5,7 @@ import swaggerUi from 'swagger-ui-express';
 import { parse as parseYaml } from 'yaml';
 import { errorMiddleware } from './api/middlewares/error.middleware';
 import { authRouter } from './api/routes/auth.routes';
+import { taskRouter } from './api/routes/task.routes';
 import { NotFoundError } from './errors/http-errors';
 
 const openApiDocument = parseYaml(
@@ -18,6 +19,7 @@ app.use(express.json({ limit: '100kb' }));
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
 app.use('/auth', authRouter);
+app.use('/tasks', taskRouter);
 
 // Ruta no encontrada: pasa por el middleware central de errores.
 app.use((_req, _res, next) => {
