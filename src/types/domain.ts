@@ -14,3 +14,15 @@ export interface User {
 export interface UserWithPassword extends User {
   password_hash: string;
 }
+
+export type TaskStatus = 'pendiente' | 'en curso' | 'completada';
+
+export interface Task {
+  id: string;
+  titulo: string;
+  descripcion: string | null;
+  fecha_vencimiento: string;
+  estado: TaskStatus;
+  created_at: Date;
+  updated_at: Date;
+}
