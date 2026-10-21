@@ -1,0 +1,561 @@
+{
+  "info": {
+    "name": "Prueba Técnica — API de Tareas",
+    "description": "Colección completa de la API de Tareas.\n\nOrden recomendado:\n1. Auth → Registrar usuario (genera un email único)\n2. Auth → Iniciar sesión (guarda {{token}})\n3. Tasks → Crear tarea (guarda {{taskId}})\n4. Tasks → Listar, Obtener, Actualizar y Eliminar\n\nLos scripts guardan automáticamente {{token}} y {{taskId}} en las variables de la colección.\n\nRequisitos:\n- API corriendo en {{baseUrl}} (por defecto http://localhost:3000).\n- PostgreSQL configurado y `npm run db:setup` aplicado.\n\nLos casos de error están al final de cada carpeta. El registro duplicado debe ejecutarse después del registro inicial.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Registro e inicio de sesión. El login guarda el JWT en {{token}}.",
+      "item": [
+        {
+          "name": "Registrar usuario",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('email', 'ana.' + Date.now() + '@example.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test('Devuelve id, nombre y email', () => {",
+                  "  pm.expect(body).to.have.property('id');",
+                  "  pm.expect(body).to.have.property('nombre');",
+                  "  pm.expect(body).to.have.property('email');",
+                  "});",
+                  "pm.test('No expone password_hash', () => {",
+                  "  pm.expect(body).to.not.have.property('password_hash');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana Postman\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/register",
+            "description": "Registra un usuario y genera un email único en cada ejecución."
+          }
+        },
+        {
+          "name": "Iniciar sesión",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Devuelve un token JWT', () => {",
+                  "  pm.expect(body.token).to.be.a('string').and.not.empty;",
+                  "});",
+                  "pm.collectionVariables.set('token', body.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/login",
+            "description": "Usa el email registrado y guarda el token en {{token}}."
+          }
+        },
+        {
+          "name": "Registrar email duplicado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+                  "const body = pm.response.json();",
+                  "pm.test('Código EMAIL_ALREADY_EXISTS', () => {",
+                  "  pm.expect(body.error.code).to.eql('EMAIL_ALREADY_EXISTS');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana Postman\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/register",
+            "description": "Debe ejecutarse después de Registrar usuario. Reutiliza el email ya registrado."
+          }
+        },
+        {
+          "name": "Registro inválido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "const body = pm.response.json();",
+                  "pm.test('Código VALIDATION_ERROR', () => {",
+                  "  pm.expect(body.error.code).to.eql('VALIDATION_ERROR');",
+                  "  pm.expect(body.error.details).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana Postman\",\n  \"email\": \"no-es-email\",\n  \"password\": \"secreto123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/register",
+            "description": "Email con formato inválido."
+          }
+        },
+        {
+          "name": "Login inválido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));",
+                  "const body = pm.response.json();",
+                  "pm.test('Código INVALID_CREDENTIALS', () => {",
+                  "  pm.expect(body.error.code).to.eql('INVALID_CREDENTIALS');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"incorrecta\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/login",
+            "description": "Contraseña incorrecta para el email registrado."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "description": "CRUD de tareas. Todas las requests usan Bearer {{token}} excepto el caso sin token.",
+      "item": [
+        {
+          "name": "Crear tarea",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.test('Tarea con estado pendiente por defecto', () => {",
+                  "  pm.expect(body.estado).to.eql('pendiente');",
+                  "  pm.expect(body).to.have.property('id');",
+                  "});",
+                  "pm.collectionVariables.set('taskId', body.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Parcial de sistemas\",\n  \"descripcion\": \"Unidades 1 a 4\",\n  \"fecha_vencimiento\": \"2026-11-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/tasks",
+            "description": "Crea una tarea y guarda su id en {{taskId}}.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar tareas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Devuelve un array en data', () => {",
+                  "  pm.expect(body.data).to.be.an('array');",
+                  "  pm.expect(body.data.length).to.be.at.least(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tasks",
+            "description": "Lista solo las tareas del usuario autenticado.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Obtener tarea",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Devuelve la tarea creada', () => {",
+                  "  pm.expect(body.id).to.eql(pm.collectionVariables.get('taskId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tasks/{{taskId}}",
+            "description": "Obtiene la tarea creada en el paso anterior.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar tarea",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Actualiza título y estado', () => {",
+                  "  pm.expect(body.titulo).to.eql('Parcial actualizado');",
+                  "  pm.expect(body.estado).to.eql('en curso');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Parcial actualizado\",\n  \"descripcion\": \"Unidades 1 a 5\",\n  \"fecha_vencimiento\": \"2026-11-05\",\n  \"estado\": \"en curso\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/tasks/{{taskId}}",
+            "description": "PUT de reemplazo completo. Requiere titulo, fecha_vencimiento y estado.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar tarea",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('204 No Content', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/tasks/{{taskId}}",
+            "description": "Elimina la tarea propia y responde 204 sin body.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Tarea inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));",
+                  "const body = pm.response.json();",
+                  "pm.test('Código TASK_NOT_FOUND', () => {",
+                  "  pm.expect(body.error.code).to.eql('TASK_NOT_FOUND');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tasks/{{$guid}}",
+            "description": "Usa un UUID aleatorio que no existe.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "UUID inválido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "const body = pm.response.json();",
+                  "pm.test('Código VALIDATION_ERROR', () => {",
+                  "  pm.expect(body.error.code).to.eql('VALIDATION_ERROR');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tasks/not-a-uuid",
+            "description": "El parámetro id no cumple el formato UUID.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear tarea sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));",
+                  "const body = pm.response.json();",
+                  "pm.test('Código UNAUTHORIZED', () => {",
+                  "  pm.expect(body.error.code).to.eql('UNAUTHORIZED');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Sin token\",\n  \"fecha_vencimiento\": \"2026-11-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/tasks",
+            "description": "Sobrescribe la auth de la carpeta con noauth.",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "default"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "secret"
+    },
+    {
+      "key": "taskId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "email",
+      "value": "ana.postman@example.com",
+      "type": "default"
+    },
+    {
+      "key": "password",
+      "value": "secreto123",
+      "type": "secret"
+    }
+  ]
+}

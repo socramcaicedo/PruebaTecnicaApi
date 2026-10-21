@@ -214,6 +214,32 @@ Los tests de autenticación y de tareas están en `tests/auth.test.ts` y
 `DATABASE_URL_TEST`; se ejecutan con `npm test`. La suite cubre 14 casos:
 registro, login, token, CRUD, validaciones y aislamiento entre usuarios.
 
+## Postman
+
+Archivos:
+
+- `postman/PruebaTecnicaApi.postman_collection.json`
+- `postman/PruebaTecnicaApi.postman_environment.json`
+
+Importación:
+
+1. Importá la colección en Postman.
+2. Importá el environment `Prueba Técnica API — Local` (opcional; solo define `baseUrl`).
+3. Seleccioná el environment.
+4. Ejecutá `Auth → Registrar usuario` y después `Auth → Iniciar sesión`.
+5. Ejecutá las requests de `Tasks` en orden.
+
+La colección guarda automáticamente `{{token}}` y `{{taskId}}`. Incluye 13
+requests: 5 de autenticación y 8 de tareas, con casos de error 400, 401, 404 y
+409. La API debe estar corriendo y la base configurada.
+
+También se puede ejecutar completa con Newman:
+
+```bash
+npx newman run postman/PruebaTecnicaApi.postman_collection.json \
+  --env-var baseUrl=http://localhost:3000
+```
+
 ## Próximos pasos
 
 1. Día 4: tests completos, documentación final, deploy y video.
