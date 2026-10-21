@@ -3,8 +3,9 @@
 API REST para registro e inicio de sesión de usuarios y gestión de tareas
 personales. Cada tarea pertenece únicamente al usuario que la creó.
 
-**Estado actual:** Día 3 — autenticación y CRUD de tareas implementados.
-Falta el cierre: tests completos, documentación final, deploy y video.
+**Estado actual:** Día 3 completado y verificado contra PostgreSQL. La suite
+tiene 14 tests de integración pasando. Falta el Día 4: documentación final,
+deploy y video.
 
 ## Stack
 
@@ -80,6 +81,10 @@ Completar `.env` con los datos locales. Nunca commitear `.env`.
 | `DATABASE_URL_TEST` | Conexión PostgreSQL para tests |
 | `JWT_SECRET` | Secreto de al menos 32 caracteres |
 | `JWT_EXPIRES_IN` | Expiración del token (por defecto `1h`) |
+
+Si la contraseña contiene caracteres especiales, codificalos en la URL. Por
+ejemplo, `@` se codifica como `%40`. En PostgreSQL local sin SSL usá
+`?sslmode=disable`; en Neon/Supabase usá `?sslmode=require`.
 
 ## Base de datos
 
@@ -206,7 +211,8 @@ npm test
 
 Los tests de autenticación y de tareas están en `tests/auth.test.ts` y
 `tests/tasks.test.ts`. Requieren una base PostgreSQL de test configurada en
-`DATABASE_URL_TEST`; se ejecutan con `npm test`.
+`DATABASE_URL_TEST`; se ejecutan con `npm test`. La suite cubre 14 casos:
+registro, login, token, CRUD, validaciones y aislamiento entre usuarios.
 
 ## Próximos pasos
 
