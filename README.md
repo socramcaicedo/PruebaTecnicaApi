@@ -3,15 +3,19 @@
 API REST para registro e inicio de sesión de usuarios y gestión de tareas
 personales. Cada tarea pertenece únicamente al usuario que la creó.
 
-**Estado actual:** Día 3 completado y verificado contra PostgreSQL. La suite
-tiene 14 tests de integración pasando. Falta el Día 4: documentación final,
-deploy y video.
+**Repositorio:** https://github.com/socramcaicedo/PruebaTecnicaApi
+
+**Estado actual:** API funcional y verificada contra PostgreSQL. La suite tiene
+14 tests de integración pasando y la colección Postman fue validada con Newman.
+Pendiente: deploy online y video explicativo.
+
+**Bitácora de desarrollo:** [DEVELOPMENT_LOG.md](DEVELOPMENT_LOG.md)
 
 ## Stack
 
 - Node.js 20+ (ideal 24 LTS)
 - Express 5
-- TypeScript 5 (`strict`)
+- TypeScript 7 (`strict`)
 - PostgreSQL 13+
 - `pg` (SQL parametrizado, sin ORM)
 - `dotenv`
@@ -240,6 +244,54 @@ npx newman run postman/PruebaTecnicaApi.postman_collection.json \
   --env-var baseUrl=http://localhost:3000
 ```
 
-## Próximos pasos
+## Decisiones de diseño
 
-1. Día 4: tests completos, documentación final, deploy y video.
+- **Capas:** `api → controllers → services → persistence`, con dependencias en una sola dirección.
+- **SQL directo:** `pg` con consultas parametrizadas, sin ORM.
+- **Configuración:** `.env` + Config Singleton con validación al arrancar.
+- **Autenticación:** bcrypt para contraseñas y JWT HS256 de 1 hora.
+- **Validación:** AJV con JSON Schema en body y params.
+- **Errores:** jerarquía `AppError` y un middleware central.
+- **Respuestas:** recurso directo en éxitos individuales, `{ data: [...] }` en listas y `{ error: { code, message, details? } }` en errores.
+- **Ownership:** toda consulta de tareas filtra por `user_id`; una tarea ajena responde 404.
+- **Estados:** `TEXT + CHECK` porque los valores incluyen espacios (`en curso`).
+- **`DELETE`:** 204 sin body.
+
+El detalle del proceso y de las decisiones está en [DEVELOPMENT_LOG.md](DEVELOPMENT_LOG.md).
+
+## Deploy
+
+**Pendiente de ejecución.** Entorno previsto: Render + Neon.
+
+1. Crear una base PostgreSQL en Neon y copiar la URL con `sslmode=require`.
+2. Crear un Web Service en Render apuntando a este repositorio.
+3. Build: `npm ci --include=dev && npm run build`.
+4. Start: `npm start`.
+5. Configurar `NODE_ENV=production`, `DATABASE_URL`, `JWT_SECRET` y `JWT_EXPIRES_IN`.
+6. Ejecutar `npm run db:setup` una vez contra la base de producción.
+7. Verificar `https://<url-de-render>/docs`.
+
+**URL del deploy:** pendiente.
+
+## Video
+
+**Pendiente de grabación.** Guion previsto:
+
+1. Presentación del proyecto y stack.
+2. Demo de registro, login y CRUD.
+3. Recorrido de la arquitectura por capas.
+4. Decisiones de diseño y qué se rechazó de la IA.
+5. Verificación: tests, Postman y Swagger.
+
+**URL del video:** pendiente.
+
+## Estado de la entrega
+
+- [x] API de autenticación y tareas.
+- [x] PostgreSQL conectado y esquema aplicado.
+- [x] 14 tests de integración.
+- [x] Swagger en `/docs`.
+- [x] Colección Postman + environment.
+- [x] README y `DEVELOPMENT_LOG.md`.
+- [ ] Deploy online.
+- [ ] Video explicativo.
