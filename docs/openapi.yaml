@@ -1,0 +1,102 @@
+openapi: 3.0.3
+info:
+  title: API de Tareas
+  version: 1.0.0
+  description: |
+    API REST para registro e inicio de sesión de usuarios y gestión de tareas
+    personales. Cada tarea pertenece únicamente al usuario que la creó.
+servers:
+  - url: http://localhost:3000
+tags:
+  - name: Auth
+    description: Registro e inicio de sesión
+  - name: Tasks
+    description: CRUD de tareas del usuario autenticado
+
+paths: {}
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ErrorDetail:
+      type: object
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                $ref: '#/components/schemas/ErrorDetail'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+        email:
+          type: string
+          format: email
+        created_at:
+          type: string
+          format: date-time
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        titulo:
+          type: string
+        descripcion:
+          type: string
+          nullable: true
+        fecha_vencimiento:
+          type: string
+          format: date
+        estado:
+          type: string
+          enum: ["pendiente", "en curso", "completada"]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    AuthToken:
+      type: object
+      properties:
+        token:
+          type: string
+
+    TaskList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
