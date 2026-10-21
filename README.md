@@ -3,8 +3,8 @@
 API REST para registro e inicio de sesión de usuarios y gestión de tareas
 personales. Cada tarea pertenece únicamente al usuario que la creó.
 
-**Estado actual:** Día 1 — fundaciones. La API todavía no expone los endpoints
-de autenticación ni de tareas; se implementan en los siguientes pasos.
+**Estado actual:** Día 2 — autenticación implementada. El CRUD de tareas se
+implementa en el Día 3.
 
 ## Stack
 
@@ -130,17 +130,39 @@ npm start
 | `npm run db:setup` | Aplicar `db/schema.sql` |
 | `npm test` | Ejecutar tests |
 
-## Endpoints planificados
+## Autenticación
+
+Las rutas protegidas requieren:
+
+```http
+Authorization: Bearer <token>
+```
+
+El token se obtiene en `POST /auth/login` y expira en 1 hora.
+
+## Endpoints
 
 | Método | Ruta | Auth | Estado |
 |---|---|---|---|
-| POST | `/auth/register` | No | Pendiente (Día 2) |
-| POST | `/auth/login` | No | Pendiente (Día 2) |
+| POST | `/auth/register` | No | Implementado (Día 2) |
+| POST | `/auth/login` | No | Implementado (Día 2) |
 | POST | `/tasks` | Bearer | Pendiente (Día 3) |
 | GET | `/tasks` | Bearer | Pendiente (Día 3) |
 | GET | `/tasks/:id` | Bearer | Pendiente (Día 3) |
 | PUT | `/tasks/:id` | Bearer | Pendiente (Día 3) |
 | DELETE | `/tasks/:id` | Bearer | Pendiente (Día 3) |
+
+### Ejemplos de autenticación
+
+```bash
+curl -X POST http://localhost:3000/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"nombre":"Ana","email":"ana@example.com","password":"secreto123"}'
+
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"ana@example.com","password":"secreto123"}'
+```
 
 ## Formato de respuestas
 
@@ -155,10 +177,10 @@ npm start
 npm test
 ```
 
-Los tests de integración se agregan en el Día 4 del plan.
+Los tests de autenticación están en `tests/auth.test.ts`. Requieren una base
+PostgreSQL de test configurada en `DATABASE_URL_TEST`; se ejecutan con `npm test`.
 
 ## Próximos pasos
 
-1. Día 2: autenticación (registro, login, JWT y middleware Bearer).
-2. Día 3: CRUD de tareas con ownership.
-3. Día 4: tests, documentación final, deploy y video.
+1. Día 3: CRUD de tareas con ownership.
+2. Día 4: tests completos, documentación final, deploy y video.
